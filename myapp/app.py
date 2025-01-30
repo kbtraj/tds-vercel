@@ -1,29 +1,29 @@
-# api/index.py
 import json
-from flask import Flask, request, jsonify
 
-app = Flask(__name__)
+def handler(request):
+    # Enable CORS for all origins
+    headers = {
+        'Access-Control-Allow-Origin': '*',  # Allows requests from any origin
+        'Content-Type': 'application/json',  # Ensures the response is in JSON format
+        'Access-Control-Allow-Methods': 'GET',  # Specifies the allowed method
+        'Access-Control-Allow-Headers': 'Content-Type'  # Specifies allowed headers
+    }
 
-# Load student data from marks.json
-def load_student_data():
-    with open('marks.json', 'r') as file:
-        return json.load(file)
-
-@app.route('/api', methods=['GET'])
-def get_marks():
-    # Get the names from query parameters
+    # Get names from query parameters
     names = request.args.getlist('name')
-    
-    # Load the student data
-    students_data = load_student_data()
-    
+
+    # Load student data from marks.json
+    with open('marks.json', 'r') as file:
+        students_data = json.load(file)
+
     result = {"marks": []}
     for student in students_data:
         if student["name"] in names:
             result["marks"].append(student["marks"])
 
-    # Return the result as a JSON response
-    return jsonify(result)
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    # Return the result as a JSON response with the CORS headers
+    return {
+        'statusCode': 200,
+        'headers': headers,
+        'body': json.dumps(result)
+    }
