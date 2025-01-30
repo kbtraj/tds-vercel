@@ -1,29 +1,45 @@
 import json
+import urllib.parse
 
-def handler(request):
-    # Enable CORS for all origins
+def handler(event, context):
+    # Enable CORS
     headers = {
-        'Access-Control-Allow-Origin': '*',  # Allows requests from any origin
-        'Content-Type': 'application/json',  # Ensures the response is in JSON format
-        'Access-Control-Allow-Methods': 'GET',  # Specifies the allowed method
-        'Access-Control-Allow-Headers': 'Content-Type'  # Specifies allowed headers
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type'
     }
 
-    # Get names from query parameters
-    names = request.args.getlist('name')
+    try:
+        # Parse query parameters
+        query_params = event.get("queryStringParameters", {})
+        names = query_params.get("name")
 
-    # Load student data from marks.json
-    with open('marks.json', 'r') as file:
-        students_data = json.load(file)
+        if names:
+            if isinstance(names, str):  # If only one name is passed
+                names = [names]
+        else:
+            names = []
 
-    result = {"marks": []}
-    for student in students_data:
-        if student["name"] in names:
-            result["marks"].append(student["marks"])
+        # Load student data from marks.json
+        with open('marks.json', 'r') as file:
+            students_data = json.load(file)
 
-    # Return the result as a JSON response with the CORS headers
-    return {
-        'statusCode': 200,
-        'headers': headers,
-        'body': json.dumps(result)
-    }
+        # Collect marks
+        result = {"marks": []}
+        for student in students_data:
+            if student["name"] in names:
+                result["marks"].append(student["marks"])
+
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps(result)
+        }
+
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({"error": "Internal Server Error", "details": str(e)})
+        }
