@@ -14,15 +14,15 @@ def apply_cors(response):
 @app.route('/api', methods=['GET'])
 def get_marks():
     try:
-        # Read names from query parameters and remove unintended values
+        # Read names from query parameters and ensure valid input
         names = [name for name in request.args.getlist('name') if isinstance(name, str) and name.strip()]
 
         # Load student data from marks.json
         with open('marks.json', 'r') as file:
-            students_data = json.load(file)
+            students_data = {student["name"]: student["marks"] for student in json.load(file)}
 
-        # Collect marks
-        result = {"marks": [student["marks"] for student in students_data if student["name"] in names]}
+        # Collect marks in the same order as input names
+        result = {"marks": [students_data.get(name, None) for name in names]}
 
         return jsonify(result), 200
 
