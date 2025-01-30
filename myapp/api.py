@@ -14,8 +14,8 @@ def apply_cors(response):
 @app.route('/api', methods=['GET'])
 def get_marks():
     try:
-        # Read names from query parameters
-        names = request.args.getlist('name')
+        # Read names from query parameters and remove unintended values
+        names = [name for name in request.args.getlist('name') if isinstance(name, str) and name.strip()]
 
         # Load student data from marks.json
         with open('marks.json', 'r') as file:
