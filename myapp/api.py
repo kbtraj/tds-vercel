@@ -1,42 +1,33 @@
+from flask import Flask, request, jsonify
 import json
 
-def handler(event, context):
-    # Enable CORS
-    headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type'
-    }
+app = Flask(__name__)
 
+# Enable CORS manually
+@app.after_request
+def apply_cors(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
+
+@app.route('/api', methods=['GET'])
+def get_marks():
     try:
-        # Extract query parameters
-        query_params = event.get("queryStringParameters", {})
-        names = query_params.get("name", [])
+        # Read names from query parameters
+        names = request.args.getlist('name')
 
-        # Ensure names is a list (if only one name is provided, it's a string)
-        if isinstance(names, str):
-            names = [names]
-
-        # Load student marks from marks.json
+        # Load student data from marks.json
         with open('marks.json', 'r') as file:
             students_data = json.load(file)
 
-        # Find marks for the requested names
-        result = {"marks": []}
-        for student in students_data:
-            if student["name"] in names:
-                result["marks"].append(student["marks"])
+        # Collect marks
+        result = {"marks": [student["marks"] for student in students_data if student["name"] in names]}
 
-        return {
-            'statusCode': 200,
-            'headers': headers,
-            'body': json.dumps(result)
-        }
+        return jsonify(result), 200
 
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': headers,
-            'body': json.dumps({"error": "Internal Server Error", "details": str(e)})
-        }
+        return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run()
